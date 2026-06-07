@@ -12,20 +12,9 @@ jobs:
       - name: Check out the repo
         uses: actions/checkout@v4
 
-      - name: Unzip and move project to workspace root
+      - name: Unzip project
         run: |
-          if [ -f astraldrift.zip ]; then
-            unzip -o astraldrift.zip -d extracted/
-            # Move everything from inside the extracted folder up to the workspace root.
-            # Handles both: files at zip root, or nested one level inside a subfolder.
-            INNER=$(ls extracted/ | head -1)
-            if [ -f "extracted/settings.gradle.kts" ]; then
-              cp -r extracted/. .
-            else
-              cp -r extracted/$INNER/. .
-            fi
-            rm -rf extracted/
-          fi
+          unzip -o astraldrift.zip
           echo "--- workspace root ---"
           ls -la
 
@@ -34,6 +23,22 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
+
+      - name: Set up Gradle 8.7
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: '8.7'
+
+      - name: Build debug APK
+        run: gradle :app:assembleDebug --stacktrace --no-daemon
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: astraldrift-debug-apk
+          path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+
 
       - name: Set up Gradle 8.7
         uses: gradle/actions/setup-gradle@v3
