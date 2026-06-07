@@ -1,8 +1,5 @@
 name: Build APK
 
-# Builds the debug APK on GitHub's servers. Triggers on push or manually
-# from the Actions tab. It expects the project bundled as astraldrift.zip
-# at the repo root; this workflow unzips it, then builds.
 on:
   push:
     branches: [ main, master ]
@@ -15,11 +12,21 @@ jobs:
       - name: Check out the repo
         uses: actions/checkout@v4
 
-      - name: Unzip the project
+      - name: Unzip and move project to workspace root
         run: |
           if [ -f astraldrift.zip ]; then
-            unzip -o astraldrift.zip -d .
+            unzip -o astraldrift.zip -d extracted/
+            # Move everything from inside the extracted folder up to the workspace root.
+            # Handles both: files at zip root, or nested one level inside a subfolder.
+            INNER=$(ls extracted/ | head -1)
+            if [ -f "extracted/settings.gradle.kts" ]; then
+              cp -r extracted/. .
+            else
+              cp -r extracted/$INNER/. .
+            fi
+            rm -rf extracted/
           fi
+          echo "--- workspace root ---"
           ls -la
 
       - name: Set up Java 17
